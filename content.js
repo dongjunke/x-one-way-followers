@@ -92,7 +92,9 @@
         .visit { color: #d8ff55; font-size: 16px; text-decoration: none; }
         .empty { padding: 22px 8px; color: #9c9d95; font-size: 10px; line-height: 1.7; text-align: center; }
         .foot { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 13px; padding-top: 13px; border-top: 1px solid rgba(245,243,235,.12); color: #777a72; font-size: 8px; line-height: 1.5; }
-        .export { border: 0; border-bottom: 1px solid #d8ff55; background: transparent; color: #d8ff55; cursor: pointer; font: inherit; }
+        .foot-actions { display: flex; align-items: center; gap: 9px; flex: 0 0 auto; }
+        .hide-panel, .export { border: 0; border-bottom: 1px solid rgba(245,243,235,.35); background: transparent; color: #9c9d95; cursor: pointer; font: inherit; }
+        .hide-panel:hover, .export:hover { border-color: #d8ff55; color: #d8ff55; }
         .stop { border-color: rgba(255,141,118,.55); background: transparent; color: #ffb6a5; }
       </style>
       <section class="panel" aria-label="X 单向关注筛选器">
@@ -106,7 +108,7 @@
           <div class="selection"><label class="selection-label"><input class="select-all" type="checkbox" /><span>全选 <b class="select-count">0</b> 个</span></label><button class="bulk-remove" type="button">移除关注</button></div>
           <div class="results"></div>
           <div class="creator-cta"><div class="creator-copy"><strong>觉得好用？浇个朋友</strong><span>@eshiyiblog · 一键关注作者</span></div><button class="creator-follow" type="button">关注 ↗</button></div>
-          <footer class="foot"><span>仅在确认后操作 · 可随时停止</span><button class="export" type="button">导出 CSV</button></footer>
+          <footer class="foot"><span>仅在确认后操作 · 可随时停止</span><div class="foot-actions"><button class="hide-panel" type="button" title="下次点击浏览器工具栏中的扩展图标即可重新打开">隐藏面板</button><button class="export" type="button">导出 CSV</button></div></footer>
         </div>
       </section>`;
     document.documentElement.append(host);
@@ -131,7 +133,10 @@
       creatorFollow: root.querySelector('.creator-follow'),
       export: root.querySelector('.export')
     };
+    host.style.display = 'none';
     panel.close.addEventListener('click', () => { host.style.display = 'none'; });
+    panel.hide = root.querySelector('.hide-panel');
+    panel.hide.addEventListener('click', () => { host.style.display = 'none'; });
     panel.action.addEventListener('click', () => startScan());
     panel.selectAll.addEventListener('change', () => selectAll(panel.selectAll.checked));
     panel.bulkRemove.addEventListener('click', beginBulkUnfollow);
@@ -424,7 +429,6 @@
     }
     runningForPage = true;
     mount();
-    showPanel();
     await sleep(1200);
     let current = await getState();
     const queue = current.unfollow?.queue || [];
@@ -472,7 +476,6 @@
     }
     runningForPage = true;
     mount();
-    showPanel();
     await sleep(1000);
     const list = await scanList(state.phase, state.token);
     if (cancelled) { runningForPage = false; return; }
