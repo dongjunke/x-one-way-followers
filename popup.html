@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>X 单向关注筛选器</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <main class="popup-shell">
+      <div class="kicker">X / FOLLOW AUDIT</div>
+      <h1>单向关注<br /><em>筛选器</em></h1>
+      <p class="lede">找出你关注了、但没有回关你的账号。</p>
+      <button id="start" class="primary" type="button">
+        <span>开始扫描</span><span aria-hidden="true">↗</span>
+      </button>
+      <button id="show" class="secondary" type="button">打开结果面板</button>
+      <p id="status" class="status" role="status"></p>
+      <div class="note"><span class="dot"></span>只读取 X 页面已加载的公开列表，不执行取消关注。</div>
+    </main>
+    <script src="popup.js"></script>
+  </body>
+</html>
