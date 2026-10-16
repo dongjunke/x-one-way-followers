@@ -2,6 +2,8 @@
   'use strict';
 
   const STORAGE_KEY = 'x-one-way-followers-state-v1';
+  const CREATOR_HANDLE = 'eshiyiblog';
+  const CREATOR_FOLLOW_INTENT = `https://x.com/intent/follow?screen_name=${CREATOR_HANDLE}`;
   const RESERVED = new Set([
     'home', 'explore', 'notifications', 'messages', 'bookmarks', 'lists', 'communities',
     'settings', 'i', 'search', 'compose', 'intent', 'privacy', 'terms', 'help', 'login',
@@ -72,6 +74,11 @@
         .bulk-remove { padding: 7px 9px; border: 1px solid rgba(255,141,118,.55); border-radius: 2px; background: transparent; color: #ffb6a5; cursor: pointer; font: 800 9px ui-monospace, monospace; }
         .bulk-remove:hover { background: rgba(255,141,118,.1); }
         .bulk-remove[disabled] { cursor: not-allowed; opacity: .45; }
+        .creator-cta { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 15px; padding: 11px 12px; border: 1px solid rgba(216,255,85,.22); border-radius: 3px; background: linear-gradient(110deg, rgba(216,255,85,.09), rgba(216,255,85,.02)); }
+        .creator-copy { min-width: 0; } .creator-copy strong, .creator-copy span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .creator-copy strong { color: #f5f3eb; font: 500 12px Georgia, serif; } .creator-copy span { margin-top: 4px; color: #9c9d95; font-size: 8px; }
+        .creator-follow { flex: 0 0 auto; padding: 8px 10px; border: 0; border-radius: 2px; background: #d8ff55; color: #11140d; cursor: pointer; font: 800 9px ui-monospace, monospace; }
+        .creator-follow:hover { background: #ecff9d; }
         .results { max-height: 44vh; overflow: auto; margin: 4px -7px 0 0; padding-right: 5px; }
         .results::-webkit-scrollbar { width: 4px; } .results::-webkit-scrollbar-thumb { background: rgba(216,255,85,.4); }
         .result { display: flex; align-items: center; gap: 8px; padding: 9px 8px; border-bottom: 1px solid rgba(245,243,235,.09); }
@@ -98,6 +105,7 @@
           <div class="error"></div>
           <div class="selection"><label class="selection-label"><input class="select-all" type="checkbox" /><span>全选 <b class="select-count">0</b> 个</span></label><button class="bulk-remove" type="button">移除关注</button></div>
           <div class="results"></div>
+          <div class="creator-cta"><div class="creator-copy"><strong>觉得好用？浇个朋友</strong><span>@eshiyiblog · 一键关注作者</span></div><button class="creator-follow" type="button">关注 ↗</button></div>
           <footer class="foot"><span>仅在确认后操作 · 可随时停止</span><button class="export" type="button">导出 CSV</button></footer>
         </div>
       </section>`;
@@ -120,12 +128,14 @@
       selectCount: root.querySelector('.select-count'),
       bulkRemove: root.querySelector('.bulk-remove'),
       results: root.querySelector('.results'),
+      creatorFollow: root.querySelector('.creator-follow'),
       export: root.querySelector('.export')
     };
     panel.close.addEventListener('click', () => { host.style.display = 'none'; });
     panel.action.addEventListener('click', () => startScan());
     panel.selectAll.addEventListener('change', () => selectAll(panel.selectAll.checked));
     panel.bulkRemove.addEventListener('click', beginBulkUnfollow);
+    panel.creatorFollow.addEventListener('click', followCreator);
     panel.export.addEventListener('click', exportCsv);
   }
 
@@ -494,6 +504,10 @@
     const link = document.createElement('a');
     link.href = url; link.download = `x-one-way-following-${new Date().toISOString().slice(0, 10)}.csv`; link.click();
     setTimeout(() => URL.revokeObjectURL(url), 500);
+  }
+
+  function followCreator() {
+    window.open(CREATOR_FOLLOW_INTENT, '_blank', 'noopener,noreferrer');
   }
 
   chrome.runtime.onMessage.addListener((message) => {
