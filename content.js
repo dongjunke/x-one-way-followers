@@ -134,9 +134,9 @@
       export: root.querySelector('.export')
     };
     host.style.display = 'none';
-    panel.close.addEventListener('click', () => { host.style.display = 'none'; });
+    panel.close.addEventListener('click', hidePanel);
     panel.hide = root.querySelector('.hide-panel');
-    panel.hide.addEventListener('click', () => { host.style.display = 'none'; });
+    panel.hide.addEventListener('click', hidePanel);
     panel.action.addEventListener('click', () => startScan());
     panel.selectAll.addEventListener('change', () => selectAll(panel.selectAll.checked));
     panel.bulkRemove.addEventListener('click', beginBulkUnfollow);
@@ -144,10 +144,22 @@
     panel.export.addEventListener('click', exportCsv);
   }
 
-  function showPanel() {
+  async function showPanel(userInitiated = false) {
     mount();
+    if (userInitiated) {
+      const latest = await getState();
+      localState = { ...latest, panelHidden: false };
+      await chrome.storage.local.set({ [STORAGE_KEY]: localState });
+    }
     host.style.display = 'block';
     render(localState);
+  }
+
+  async function hidePanel() {
+    const latest = await getState();
+    localState = { ...latest, panelHidden: true };
+    await chrome.storage.local.set({ [STORAGE_KEY]: localState });
+    host.style.display = 'none';
   }
 
   function render(state = localState) {
@@ -337,14 +349,14 @@
     const username = resolveIdentity();
     if (!username) {
       await setState({ status: 'error', error: '无法识别当前登录账号。请先打开你自己的 X 个人主页，再点击开始扫描。' });
-      showPanel();
+      await showPanel(true);
       return;
     }
     cancelled = false;
     const token = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
     const state = { status: 'scanning', phase: 'following', username, profileUrl: `https://x.com/${username}`, following: [], followers: [], results: [], selectedHandles: [], token, startedAt: Date.now() };
     await setState(state);
-    showPanel();
+    await showPanel(true);
     navigateTo(username, 'following');
     await maybeRunPhase();
   }
@@ -366,7 +378,7 @@
       unfollow: { queue: selected, completed: [], failed: [], current: '', startedAt: Date.now() }
     };
     await setState(next);
-    showPanel();
+    await showPanel(true);
     navigateTo(localState.username, 'following');
     await maybeRunUnfollow();
   }
@@ -429,6 +441,7 @@
     }
     runningForPage = true;
     mount();
+    if (state.panelHidden !== true) showPanel();
     await sleep(1200);
     let current = await getState();
     const queue = current.unfollow?.queue || [];
@@ -476,6 +489,7 @@
     }
     runningForPage = true;
     mount();
+    if (state.panelHidden !== true) showPanel();
     await sleep(1000);
     const list = await scanList(state.phase, state.token);
     if (cancelled) { runningForPage = false; return; }
@@ -494,7 +508,6 @@
     const done = { ...latest, status: 'done', phase: 'done', followers: list, results, finishedAt: Date.now(), error: '' };
     await setState(done);
     runningForPage = false;
-    if (location.pathname.toLowerCase() !== `/${state.username}`) location.href = `/${state.username}`;
   }
 
   function exportCsv() {
@@ -516,13 +529,14 @@
   chrome.runtime.onMessage.addListener((message) => {
     mount();
     if (message.type === 'START_SCAN') startScan();
-    if (message.type === 'SHOW_PANEL') showPanel();
+    if (message.type === 'SHOW_PANEL') showPanel(true);
   });
 
   async function boot() {
     mount();
     localState = await getState();
     render(localState);
+    if (['scanning', 'unfollowing'].includes(localState.status) && localState.panelHidden !== true) showPanel();
     if (localState.status === 'scanning') maybeRunPhase();
     if (localState.status === 'unfollowing') maybeRunUnfollow();
     setInterval(() => {
